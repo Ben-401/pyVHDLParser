@@ -31,6 +31,7 @@
 from pathlib import Path
 
 import sys
+from textwrap import dedent
 
 from pyVHDLParser.Base               import ParserException
 from pyVHDLParser.Functions          import Console, Exit
@@ -188,6 +189,84 @@ if (mode & 6 == 6):
 	wordTokenStream = Tokenizer.GetWordTokenizer(content)
 	vhdlBlockStream = TokenToBlockParser.Transform(wordTokenStream, debug=(mode & 1 == 1))
 
+	graphML = []
+	graphML.append(dedent("""\
+		<?xml version="1.0" encoding="UTF-8"?>
+		<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+			xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java"
+			xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0"
+			xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0"
+			xmlns:y="http://www.yworks.com/xml/graphml"
+			xmlns:yed="http://www.yworks.com/xml/yed/3"
+			xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+			<!--Created by yEd 3.16.2.1-->
+		  <key for="port" id="d0" yfiles.type="portgraphics"/>
+		  <key for="port" id="d1" yfiles.type="portgeometry"/>
+		  <key for="port" id="d2" yfiles.type="portuserdata"/>
+		  <key attr.name="url" attr.type="string" for="node" id="d3"/>
+		  <key attr.name="description" attr.type="string" for="node" id="d4"/>
+		  <key for="node" id="d5" yfiles.type="nodegraphics"/>
+		  <key for="graphml" id="d6" yfiles.type="resources"/>
+		  <key attr.name="url" attr.type="string" for="edge" id="d7"/>
+		  <key attr.name="description" attr.type="string" for="edge" id="d8"/>
+		  <key for="edge" id="d9" yfiles.type="edgegraphics"/>
+			<graph id="Current.vhdl" edgedefault="directed">
+				<node id="n0">
+		      <data key="d5">
+		        <y:ShapeNode>
+		          <y:Geometry height="25.0" width="300.0" />
+		          <y:Fill color="#FF0000" transparent="false"/>
+		          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+		          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">Forward Edge Error</y:NodeLabel>
+		          <y:Shape type="rectangle"/>
+		        </y:ShapeNode>
+		      </data>
+		    </node>
+				<node id="n1">
+		      <data key="d5">
+		        <y:ShapeNode>
+		          <y:Geometry height="25.0" width="300.0" />
+		          <y:Fill color="#FF0000" transparent="false"/>
+		          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+		          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">Backward Edge Error</y:NodeLabel>
+		          <y:Shape type="rectangle"/>
+		        </y:ShapeNode>
+		      </data>
+		    </node>
+				<node id="n2">
+		      <data key="d5">
+		        <y:ShapeNode>
+		          <y:Geometry height="25.0" width="300.0" />
+		          <y:Fill color="#CC99FF" transparent="false"/>
+		          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+		          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">StartOfDocumentBlock</y:NodeLabel>
+		          <y:Shape type="rectangle"/>
+		        </y:ShapeNode>
+		      </data>
+		    </node>
+				<node id="n3">
+		      <data key="d5">
+		        <y:ShapeNode>
+		          <y:Geometry height="25.0" width="300.0" />
+		          <y:Fill color="#CC99FF" transparent="false"/>
+		          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+		          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">StartOfDocumentToken</y:NodeLabel>
+		          <y:Shape type="rectangle"/>
+		        </y:ShapeNode>
+		      </data>
+		    </node>
+		    <edge source="n2" target="n3">
+		      <data key="d9">
+		        <y:PolyLineEdge>
+		          <y:LineStyle color="#000000" type="dashed" width="1.0"/>
+		          <y:Arrows source="none" target="delta"/>
+		          <y:BendStyle smoothed="false"/>
+		        </y:PolyLineEdge>
+		      </data>
+		    </edge>
+		"""))
+
 	try:
 		blockIterator = iter(vhdlBlockStream)
 		firstBlock = next(blockIterator)
@@ -199,13 +278,102 @@ if (mode & 6 == 6):
 		lastBlock = firstBlock
 		lastToken = firstBlock.StartToken
 
+		blockRegister = {firstBlock: "n2"}
+		tokenRegister = {firstBlock.StartToken: "n3"}
+
+		blockID = 3
 		for vhdlBlock in blockIterator:
+			blockID += 1
+			nodeID = "n" + str(blockID)
+			blockRegister[vhdlBlock] = nodeID
+
+			graphML.append(dedent("""\
+						<node id="{id}">
+				      <data key="d5">
+				        <y:ShapeNode>
+				          <y:Geometry height="25.0" width="300.0" />
+				          <y:Fill color="#CCFFCC" transparent="false"/>
+				          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+				          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">{label}</y:NodeLabel>
+				          <y:Shape type="rectangle"/>
+				        </y:ShapeNode>
+				      </data>
+				    </node>
+						<edge source="{src1}" target="{tar1}">
+				      <data key="d9">
+				        <y:PolyLineEdge>
+				          <y:LineStyle color="#000000" type="line" width="1.0"/>
+				          <y:Arrows source="none" target="delta"/>
+				          <y:BendStyle smoothed="false"/>
+				        </y:PolyLineEdge>
+				      </data>
+				    </edge>
+						<edge source="{src2}" target="{tar2}">
+				      <data key="d9">
+				        <y:PolyLineEdge>
+				          <y:LineStyle color="#000000" type="line" width="1.0"/>
+				          <y:Arrows source="none" target="delta"/>
+				          <y:BendStyle smoothed="false"/>
+				        </y:PolyLineEdge>
+				      </data>
+				    </edge>
+				""".format(
+					id=nodeID,
+					label="{classname} at ({line1}:{col1}) .. ({line2}:{col2})".format(
+						classname=vhdlBlock.__class__.__qualname__,
+						line1=vhdlBlock.StartToken.Start.Row,
+						col1=vhdlBlock.StartToken.Start.Column,
+						line2="xx",#vhdlBlock.EndToken.End.Row,
+						col2="yy" #vhdlBlock.EndToken.End.Column
+					),# "IdentifierToken 'myPackage' (37:12)"
+			    src1=blockRegister[lastBlock],
+			    tar1=blockRegister.get(lastBlock.NextBlock, "n0"),
+					src2=nodeID,
+					tar2=blockRegister.get(vhdlBlock, "n1")
+			  )
+			))
+
+
 			if isinstance(vhdlBlock, EndOfDocumentBlock):
 				lastBlock = vhdlBlock
 				break
 			tokenIterator = iter(vhdlBlock)
 
 			for token in tokenIterator:
+				blockID += 1
+				nodeID = "n" + str(blockID)
+				tokenRegister[token] = nodeID
+				graphML.append(dedent("""\
+							<node id="{id}">
+					      <data key="d5">
+					        <y:ShapeNode>
+					          <y:Geometry height="25.0" width="300.0" />
+					          <y:Fill color="#CCCCCC" transparent="false"/>
+					          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+					          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">{label}</y:NodeLabel>
+					          <y:Shape type="rectangle"/>
+					        </y:ShapeNode>
+					      </data>
+					    </node>
+							<edge source="{src1}" target="{tar1}" />
+							<edge source="{src2}" target="{tar2}" />
+					""".format(
+					id=nodeID,
+					label="{classname} at ({line1}:{col1}) .. ({line2}:{col2})".format(
+						classname=token.__class__.__qualname__,
+						line1=token.Start.Row,
+						col1=token.Start.Column,
+						line2=token.End.Row,
+						col2=token.End.Column
+					),  # "IdentifierToken 'myPackage' (37:12)"
+					src1=tokenRegister[lastToken],
+					tar1=tokenRegister.get(lastToken.NextToken, "n0"),
+					src2=nodeID,
+					tar2=tokenRegister.get(token.PreviousToken, "n1")
+				)
+				))
+
+
 				if (token.NextToken is None):
 					print("{RED}Token has an open end.{NOCOLOR}".format(**Console.Foreground))
 					print("{RED}  Block:  {block}{NOCOLOR}".format(block=vhdlBlock, **Console.Foreground))
@@ -245,6 +413,14 @@ if (mode & 6 == 6):
 		print("{RED}ERROR: {0!s}{NOCOLOR}".format(ex, **Console.Foreground))
 	except NotImplementedError as ex:
 		print("{RED}NotImplementedError: {0!s}{NOCOLOR}".format(ex, **Console.Foreground))
+	finally:
+		graphML.append(dedent("""\
+				</graph>
+			</graphml>
+			"""))
+
+	with file.with_suffix(".graphml").open('w') as fileHandle:
+		fileHandle.write("".join(graphML))
 
 # ==============================================================================
 	print("{RED}{line}{NOCOLOR}".format(line="="*160, **Console.Foreground))
