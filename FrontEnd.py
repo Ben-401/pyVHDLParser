@@ -35,10 +35,11 @@ from textwrap import dedent
 
 from pyVHDLParser.Base               import ParserException
 from pyVHDLParser.Functions          import Console, Exit
-from pyVHDLParser.Token              import StartOfDocumentToken, EndOfDocumentToken, CharacterToken, SpaceToken, StringToken, LinebreakToken, CommentToken, IndentationToken
+from pyVHDLParser.Token import StartOfDocumentToken, EndOfDocumentToken, CharacterToken, SpaceToken, StringToken, \
+	LinebreakToken, CommentToken, IndentationToken, Token
 from pyVHDLParser.Token.Keywords import BoundaryToken, EndToken, KeywordToken, DelimiterToken, IdentifierToken
 from pyVHDLParser.Token.Parser       import Tokenizer
-from pyVHDLParser.Blocks             import CommentBlock
+from pyVHDLParser.Blocks import CommentBlock, Block
 from pyVHDLParser.Blocks.Common      import LinebreakBlock, IndentationBlock
 from pyVHDLParser.Blocks.Document    import StartOfDocumentBlock, EndOfDocumentBlock
 from pyVHDLParser.Blocks.Structural  import Entity
@@ -356,8 +357,24 @@ if (mode & 6 == 6):
 					        </y:ShapeNode>
 					      </data>
 					    </node>
-							<edge source="{src1}" target="{tar1}" />
-							<edge source="{src2}" target="{tar2}" />
+							<edge source="{src1}" target="{tar1}">
+					      <data key="d9">
+					        <y:PolyLineEdge>
+					          <y:LineStyle color="#000000" type="line" width="1.0"/>
+					          <y:Arrows source="none" target="delta"/>
+					          <y:BendStyle smoothed="false"/>
+					        </y:PolyLineEdge>
+					      </data>
+					    </edge>
+							<edge source="{src2}" target="{tar2}">
+					      <data key="d9">
+					        <y:PolyLineEdge>
+					          <y:LineStyle color="#000000" type="line" width="1.0"/>
+					          <y:Arrows source="none" target="delta"/>
+					          <y:BendStyle smoothed="false"/>
+					        </y:PolyLineEdge>
+					      </data>
+					    </edge>
 					""".format(
 					id=nodeID,
 					label="{classname} at ({line1}:{col1}) .. ({line2}:{col2})".format(
@@ -409,6 +426,39 @@ if (mode & 6 == 6):
 			print("{RED}Last block is not EndOfDocumentBlock: {block}{NOCOLOR}".format(block=endBlock, **Console.Foreground))
 		elif (not isinstance(endBlock.StartToken, EndOfDocumentToken)):
 			print("{RED}Last token is not EndOfDocumentToken: {token}{NOCOLOR}".format(token=endBlock.StartToken, **Console.Foreground))
+
+		blockID += 1
+		nodeID = "n" + str(blockID)
+		tokenRegister[lastBlock.StartToken] = nodeID
+		graphML.append(dedent("""\
+					<node id="{id}">
+			      <data key="d5">
+			        <y:ShapeNode>
+			          <y:Geometry height="25.0" width="300.0" />
+			          <y:Fill color="#CC99FF" transparent="false"/>
+			          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
+			          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="l" textColor="#000000" verticalTextPosition="bottom" visible="true" width="195.34375" x="4.0" y="3.1494140625">{label}</y:NodeLabel>
+			          <y:Shape type="rectangle"/>
+			        </y:ShapeNode>
+			      </data>
+			    </node>
+					<edge source="{src1}" target="{tar1}" />
+					<edge source="{src2}" target="{tar2}" />
+			""".format(
+			id=nodeID,
+			label="{classname} at ({line1}:{col1}) .. ({line2}:{col2})".format(
+				classname=EndOfDocumentToken.__qualname__,
+				line1=lastBlock.StartToken.Start.Row,
+				col1=lastBlock.StartToken.Start.Column,
+				line2=lastBlock.StartToken.End.Row,
+				col2=lastBlock.StartToken.End.Column
+			),  # "IdentifierToken 'myPackage' (37:12)"
+			src1=tokenRegister[lastToken],
+			tar1=tokenRegister.get(lastToken.NextToken, "n0"),
+			src2=nodeID,
+			tar2=tokenRegister.get(endBlock.PreviousBlock, "n1")
+		)
+		))
 
 	except ParserException as ex:
 		print("{RED}ERROR: {0!s}{NOCOLOR}".format(ex, **Console.Foreground))
